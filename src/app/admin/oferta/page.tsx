@@ -5,7 +5,7 @@ import { deleteOfferAction, saveOfferAction } from "../actions";
 
 export default async function AdminOffers() {
   if (!(await isAdmin())) redirect("/admin");
-  const offers = await listAllOffers();
+  const offers = listAllOffers();
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-8 items-start">
       <div>

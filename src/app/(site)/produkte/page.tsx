@@ -16,11 +16,9 @@ export default async function ProduktePage({
   searchParams: Promise<{ kategori?: string }>;
 }) {
   const { kategori } = await searchParams;
-  const [categories, current] = await Promise.all([
-    listCategories(),
-    kategori ? getCategoryBySlug(kategori) : Promise.resolve(undefined),
-  ]);
-  const products = await listProducts({ categorySlug: current?.slug });
+  const categories = listCategories();
+  const current = kategori ? getCategoryBySlug(kategori) : undefined;
+  const products = listProducts({ categorySlug: current?.slug });
 
   return (
     <div className="container-x py-10 md:py-14">

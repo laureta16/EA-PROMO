@@ -25,23 +25,25 @@ export async function submitOrderAction(
     return { ok: false, message: "Vlera shumë e gjatë." };
   }
 
-  let productId: string | null = null;
+  let productId: number | null = null;
   let productName = (productNameRaw ?? "").toString();
 
   if (productIdRaw) {
-    const slug = productIdRaw.toString();
-    const p = await getProductById(slug);
-    if (p) {
-      productId = p.id;
-      productName = p.name;
+    const id = Number(productIdRaw);
+    if (Number.isFinite(id)) {
+      const p = getProductById(id);
+      if (p) {
+        productId = p.id;
+        productName = p.name;
+      }
     }
   }
   if (!productName) productName = "Kërkesë e personalizuar";
 
-  const productForPrice = productId ? await getProductById(productId) : undefined;
+  const productForPrice = productId ? getProductById(productId) : undefined;
   const total = (productForPrice?.price_cents ?? 0) * quantity;
 
-  await createOrder({
+  createOrder({
     product_id: productId,
     product_name: productName,
     quantity,

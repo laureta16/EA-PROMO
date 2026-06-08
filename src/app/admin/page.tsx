@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isAdmin } from "@/lib/auth";
 import { LoginForm } from "@/components/LoginForm";
-import { getCounts } from "@/lib/queries";
+import { getDb } from "@/lib/db";
 
 export default async function AdminHome() {
   const authed = await isAdmin();
@@ -12,7 +12,13 @@ export default async function AdminHome() {
       </div>
     );
   }
-  const counts = await getCounts();
+  const db = getDb();
+  const counts = {
+    products: (db.prepare("SELECT COUNT(*) AS n FROM products").get() as { n: number }).n,
+    categories: (db.prepare("SELECT COUNT(*) AS n FROM categories").get() as { n: number }).n,
+    offers: (db.prepare("SELECT COUNT(*) AS n FROM offers WHERE active=1").get() as { n: number }).n,
+    orders: (db.prepare("SELECT COUNT(*) AS n FROM orders WHERE status='pending'").get() as { n: number }).n,
+  };
   const cards: { href: string; label: string; n: number }[] = [
     { href: "/admin/produkte", label: "Produkte", n: counts.products },
     { href: "/admin/kategori", label: "Kategori", n: counts.categories },

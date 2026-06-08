@@ -36,7 +36,7 @@ function statusStyle(v: string): React.CSSProperties {
 
 export default async function AdminOrders() {
   if (!(await isAdmin())) redirect("/admin");
-  const orders = await listOrders();
+  const orders = listOrders();
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Porosi</h1>

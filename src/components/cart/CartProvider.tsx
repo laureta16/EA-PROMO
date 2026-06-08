@@ -10,7 +10,7 @@ import {
 } from "react";
 
 export type CartItem = {
-  productId: string;
+  productId: number;
   slug: string;
   name: string;
   price_cents: number;
@@ -23,13 +23,13 @@ type CartContextValue = {
   count: number;
   total: number;
   add: (item: Omit<CartItem, "quantity">, quantity?: number) => void;
-  remove: (productId: string) => void;
-  setQuantity: (productId: string, quantity: number) => void;
+  remove: (productId: number) => void;
+  setQuantity: (productId: number, quantity: number) => void;
   clear: () => void;
   ready: boolean;
 };
 
-const STORAGE_KEY = "eapromo_cart_v1";
+const STORAGE_KEY = "eapromo_cart_v2";
 
 const CartContext = createContext<CartContextValue | null>(null);
 
@@ -64,28 +64,22 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       const existing = cur.find((i) => i.productId === item.productId);
       if (existing) {
         return cur.map((i) =>
-          i.productId === item.productId
-            ? { ...i, quantity: i.quantity + quantity }
-            : i,
+          i.productId === item.productId ? { ...i, quantity: i.quantity + quantity } : i
         );
       }
       return [...cur, { ...item, quantity }];
     });
   }, []);
 
-  const remove = useCallback((productId: string) => {
+  const remove = useCallback((productId: number) => {
     setItems((cur) => cur.filter((i) => i.productId !== productId));
   }, []);
 
-  const setQuantity = useCallback((productId: string, quantity: number) => {
+  const setQuantity = useCallback((productId: number, quantity: number) => {
     setItems((cur) =>
       cur
-        .map((i) =>
-          i.productId === productId
-            ? { ...i, quantity: Math.max(0, quantity) }
-            : i,
-        )
-        .filter((i) => i.quantity > 0),
+        .map((i) => (i.productId === productId ? { ...i, quantity: Math.max(0, quantity) } : i))
+        .filter((i) => i.quantity > 0)
     );
   }, []);
 

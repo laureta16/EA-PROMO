@@ -12,7 +12,6 @@ export function ProductForm({
   categories: Category[];
 }) {
   const p = product;
-  const editing = !!p;
   const [preview, setPreview] = useState<string | null>(p?.image_url ?? null);
   const [fileName, setFileName] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -43,20 +42,10 @@ export function ProductForm({
         <label htmlFor="name">Emri *</label>
         <input id="name" name="name" required defaultValue={p?.name} className="input" />
       </div>
-
-      {editing ? (
-        <div className="field">
-          <label>Slug</label>
-          <input value={p?.slug} disabled className="input" />
-          <p className="text-xs text-[var(--muted)]">Slug-u nuk mund të ndryshohet pas krijimit.</p>
-        </div>
-      ) : (
-        <div className="field">
-          <label htmlFor="slug">Slug (bosh = auto nga emri)</label>
-          <input id="slug" name="slug" className="input" placeholder="psh. stilolaps-teresa" />
-        </div>
-      )}
-
+      <div className="field">
+        <label htmlFor="slug">Slug (lihet bosh për auto)</label>
+        <input id="slug" name="slug" defaultValue={p?.slug} className="input" />
+      </div>
       <div className="field">
         <label htmlFor="description">Përshkrimi *</label>
         <textarea id="description" name="description" required defaultValue={p?.description} className="textarea" />
@@ -67,11 +56,11 @@ export function ProductForm({
           <input id="price_cents" name="price_cents" type="number" min={0} required defaultValue={p?.price_cents ?? ""} className="input" />
         </div>
         <div className="field">
-          <label htmlFor="category_slug">Kategoria</label>
-          <select id="category_slug" name="category_slug" defaultValue={p?.category_slug ?? ""} className="select">
-            <option value="">—</option>
+          <label htmlFor="category_id">Kategoria</label>
+          <select id="category_id" name="category_id" defaultValue={p?.category_id ?? 0} className="select">
+            <option value={0}>—</option>
             {categories.map((c) => (
-              <option key={c.id} value={c.slug}>{c.name}</option>
+              <option key={c.id} value={c.id}>{c.name}</option>
             ))}
           </select>
         </div>
@@ -102,7 +91,7 @@ export function ProductForm({
                 />
                 {fileName && <p className="text-xs text-[var(--muted)] mt-1">Zgjedhur: {fileName}</p>}
                 <p className="text-xs text-[var(--muted)] mt-1">
-                  JPG, PNG, WEBP, GIF ose SVG · max 5MB. Ngarkohet në Firebase Storage.
+                  JPG, PNG, WEBP, GIF ose SVG · max 5MB. Lihet bosh për ta mbajtur foton ekzistuese.
                 </p>
               </div>
 

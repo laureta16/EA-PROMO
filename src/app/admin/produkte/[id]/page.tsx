@@ -10,8 +10,9 @@ export default async function EditProductPage({
 }) {
   if (!(await isAdmin())) redirect("/admin");
   const { id } = await params;
-  const [p, categories] = await Promise.all([getProductById(id), listCategories()]);
+  const p = getProductById(Number(id));
   if (!p) notFound();
+  const categories = listCategories();
   return (
     <div>
       <h1 className="text-2xl font-bold mb-6">Redakto: {p.name}</h1>

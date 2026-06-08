@@ -36,7 +36,7 @@ export async function checkoutAction(
   const summary = items.map((i) => `${i.quantity}× ${i.product_name}`).join(", ");
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
 
-  await createOrder({
+  createOrder({
     product_id: items.length === 1 ? items[0].product_id : null,
     product_name:
       items.length === 1

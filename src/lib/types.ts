@@ -1,5 +1,5 @@
 export type Category = {
-  id: string;
+  id: number;
   slug: string;
   name: string;
   description: string | null;
@@ -7,13 +7,13 @@ export type Category = {
 };
 
 export type Product = {
-  id: string;
+  id: number;
   slug: string;
   name: string;
   description: string;
   price_cents: number;
   image_url: string | null;
-  category_slug: string | null;
+  category_id: number | null;
   featured: number;
   active: number;
   created_at: number;
@@ -21,10 +21,11 @@ export type Product = {
 
 export type ProductWithCategory = Product & {
   category_name: string | null;
+  category_slug: string | null;
 };
 
 export type Offer = {
-  id: string;
+  id: number;
   title: string;
   description: string;
   discount_percent: number;
@@ -33,7 +34,7 @@ export type Offer = {
 };
 
 export type OrderItem = {
-  product_id: string | null;
+  product_id: number | null;
   product_name: string;
   product_slug?: string;
   quantity: number;
@@ -41,8 +42,8 @@ export type OrderItem = {
 };
 
 export type Order = {
-  id: string;
-  product_id: string | null;
+  id: number;
+  product_id: number | null;
   product_name: string;
   quantity: number;
   customer_name: string;

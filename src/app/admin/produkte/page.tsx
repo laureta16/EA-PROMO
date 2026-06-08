@@ -7,7 +7,7 @@ import { deleteProductAction } from "../actions";
 
 export default async function AdminProducts() {
   if (!(await isAdmin())) redirect("/admin");
-  const products = await listProducts({ activeOnly: false });
+  const products = listProducts({ activeOnly: false });
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6">

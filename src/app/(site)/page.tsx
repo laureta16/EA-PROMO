@@ -12,12 +12,10 @@ const SHOWCASE_POSTS = [
   { src: "/showcase/trofe.png", title: "Trofe & kupa rezine", subtitle: "40/46/52 cm · Pllakë e gdhendur", href: "/produkte/trofe-resine" },
 ];
 
-export default async function HomePage() {
-  const [featured, categories, offers] = await Promise.all([
-    getFeaturedProducts(8),
-    listCategories(),
-    listActiveOffers(),
-  ]);
+export default function HomePage() {
+  const featured = getFeaturedProducts(8);
+  const categories = listCategories();
+  const offers = listActiveOffers();
 
   const productLd = {
     "@context": "https://schema.org",

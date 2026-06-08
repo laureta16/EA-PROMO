@@ -7,8 +7,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/oferta" },
 };
 
-export default async function OfertaPage() {
-  const offers = await listActiveOffers();
+export default function OfertaPage() {
+  const offers = listActiveOffers();
   return (
     <div className="container-x py-10 md:py-14">
       <h1 className="text-3xl md:text-4xl font-bold text-[var(--accent)]">Oferta aktuale</h1>

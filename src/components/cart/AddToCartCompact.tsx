@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useCart } from "./CartProvider";
 
 export function AddToCartCompact(props: {
-  productId: string;
+  productId: number;
   slug: string;
   name: string;
   price_cents: number;

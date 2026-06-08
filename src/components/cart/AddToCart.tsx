@@ -10,7 +10,7 @@ export function AddToCart({
   price_cents,
   image_url,
 }: {
-  productId: string;
+  productId: number;
   slug: string;
   name: string;
   price_cents: number;

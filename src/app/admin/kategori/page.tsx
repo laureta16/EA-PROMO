@@ -5,7 +5,7 @@ import { deleteCategoryAction, saveCategoryAction } from "../actions";
 
 export default async function AdminCategories() {
   if (!(await isAdmin())) redirect("/admin");
-  const categories = await listCategories();
+  const categories = listCategories();
   return (
     <div className="grid lg:grid-cols-[1fr_360px] gap-6 lg:gap-8 items-start">
       <div>

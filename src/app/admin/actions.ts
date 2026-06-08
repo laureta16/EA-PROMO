@@ -38,10 +38,6 @@ function toInt(v: FormDataEntryValue | null, fallback = 0): number {
   return Number.isFinite(n) ? n : fallback;
 }
 
-function str(v: FormDataEntryValue | null): string {
-  return (v ?? "").toString().trim();
-}
-
 function slugify(s: string): string {
   return s
     .toLowerCase()
@@ -54,14 +50,15 @@ function slugify(s: string): string {
 
 export async function saveProductAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id")); // existing doc id (slug) when editing
-  const name = str(formData.get("name"));
-  let slug = str(formData.get("slug"));
+  const id = toInt(formData.get("id"));
+  const name = (formData.get("name") ?? "").toString().trim();
+  let slug = (formData.get("slug") ?? "").toString().trim();
   if (!slug) slug = slugify(name);
   const description = (formData.get("description") ?? "").toString();
   const price_cents = toInt(formData.get("price_cents"));
-  let image_url: string | null = str(formData.get("image_url")) || null;
-  const category_slug = str(formData.get("category_slug")) || null;
+  let image_url: string | null = (formData.get("image_url") ?? "").toString().trim() || null;
+  const cat = toInt(formData.get("category_id"));
+  const category_id = cat > 0 ? cat : null;
   const featured = formData.get("featured") ? 1 : 0;
   const active = formData.get("active") ? 1 : 0;
 
@@ -73,34 +70,13 @@ export async function saveProductAction(formData: FormData) {
   const file = formData.get("image_file");
   if (file instanceof File && file.size > 0) {
     image_url = await saveUploadedImage(file);
-  } else if (!image_url && id) {
-    image_url = (await getProductById(id))?.image_url ?? null;
+  } else if (!image_url && id > 0) {
+    image_url = getProductById(id)?.image_url ?? null;
   }
 
-  if (id) {
-    // Edit: slug is immutable, use the URL/doc id
-    await updateProduct(id, {
-      slug: id,
-      name,
-      description,
-      price_cents,
-      image_url,
-      category_slug,
-      featured,
-      active,
-    });
-  } else {
-    await createProduct({
-      slug,
-      name,
-      description,
-      price_cents,
-      image_url,
-      category_slug,
-      featured,
-      active,
-    });
-  }
+  const payload = { slug, name, description, price_cents, image_url, category_id, featured, active };
+  if (id > 0) updateProduct(id, payload);
+  else createProduct(payload);
 
   revalidatePath("/");
   revalidatePath("/produkte");
@@ -110,22 +86,22 @@ export async function saveProductAction(formData: FormData) {
 
 export async function deleteProductAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  if (id) await deleteProduct(id);
+  const id = toInt(formData.get("id"));
+  if (id > 0) deleteProduct(id);
   revalidatePath("/produkte");
   revalidatePath("/admin/produkte");
 }
 
 export async function saveCategoryAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  const name = str(formData.get("name"));
-  let slug = str(formData.get("slug"));
+  const id = toInt(formData.get("id"));
+  const name = (formData.get("name") ?? "").toString().trim();
+  let slug = (formData.get("slug") ?? "").toString().trim();
   if (!slug) slug = slugify(name);
-  const description = str(formData.get("description")) || null;
+  const description = (formData.get("description") ?? "").toString().trim() || null;
   if (!name || !slug) throw new Error("Emri dhe slug-u janë të detyrueshëm.");
-  if (id) await updateCategory(id, { slug: id, name, description });
-  else await createCategory({ slug, name, description });
+  if (id > 0) updateCategory(id, { slug, name, description });
+  else createCategory({ slug, name, description });
   revalidatePath("/produkte");
   revalidatePath("/admin/kategori");
   redirect("/admin/kategori");
@@ -133,23 +109,23 @@ export async function saveCategoryAction(formData: FormData) {
 
 export async function deleteCategoryAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  if (id) await deleteCategory(id);
+  const id = toInt(formData.get("id"));
+  if (id > 0) deleteCategory(id);
   revalidatePath("/produkte");
   revalidatePath("/admin/kategori");
 }
 
 export async function saveOfferAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  const title = str(formData.get("title"));
-  const description = str(formData.get("description"));
+  const id = toInt(formData.get("id"));
+  const title = (formData.get("title") ?? "").toString().trim();
+  const description = (formData.get("description") ?? "").toString().trim();
   const discount_percent = toInt(formData.get("discount_percent"));
   const active = formData.get("active") ? 1 : 0;
   if (!title || !description) throw new Error("Të dhëna të paplota.");
   const payload = { title, description, discount_percent, active };
-  if (id) await updateOffer(id, payload);
-  else await createOffer(payload);
+  if (id > 0) updateOffer(id, payload);
+  else createOffer(payload);
   revalidatePath("/");
   revalidatePath("/oferta");
   revalidatePath("/admin/oferta");
@@ -158,16 +134,16 @@ export async function saveOfferAction(formData: FormData) {
 
 export async function deleteOfferAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  if (id) await deleteOffer(id);
+  const id = toInt(formData.get("id"));
+  if (id > 0) deleteOffer(id);
   revalidatePath("/oferta");
   revalidatePath("/admin/oferta");
 }
 
 export async function updateOrderStatusAction(formData: FormData) {
   await assertAdmin();
-  const id = str(formData.get("id"));
-  const status = str(formData.get("status"));
-  if (id && status) await updateOrderStatus(id, status);
+  const id = toInt(formData.get("id"));
+  const status = (formData.get("status") ?? "").toString();
+  if (id > 0 && status) updateOrderStatus(id, status);
   revalidatePath("/admin/porosi");
 }
