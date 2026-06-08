@@ -36,6 +36,16 @@ yarn-error.log*
 # vercel
 .vercel
 
+# sqlite database (do not commit user data)
+/data
+
+# Admin-uploaded product images (do not commit user uploads)
+/public/uploads
+
+# Firebase service account credentials — never commit
+/.firebase-service-account.json
+.firebase/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
