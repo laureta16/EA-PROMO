@@ -2,10 +2,19 @@ import Database from "better-sqlite3";
 import path from "node:path";
 import fs from "node:fs";
 
-const DATA_DIR = path.join(process.cwd(), "data");
-if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+// On serverless platforms (Vercel/Netlify/AWS Lambda) the filesystem is
+// read-only except for /tmp. Use an in-memory SQLite DB there — it is
+// seeded on every cold start so the public site always shows products,
+// but admin writes (products/orders) don't persist between requests.
+// For real persistence in production, migrate to Turso / Postgres.
+const IS_SERVERLESS = !!process.env.VERCEL || !!process.env.AWS_LAMBDA_FUNCTION_NAME;
 
-const DB_PATH = path.join(DATA_DIR, "eapromo.db");
+const DATA_DIR = path.join(process.cwd(), "data");
+const DB_PATH = IS_SERVERLESS ? ":memory:" : path.join(DATA_DIR, "eapromo.db");
+
+if (!IS_SERVERLESS && !fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
 declare global {
   // eslint-disable-next-line no-var
@@ -18,7 +27,7 @@ function columnExists(db: Database.Database, table: string, column: string): boo
 }
 
 function init(db: Database.Database) {
-  db.pragma("journal_mode = WAL");
+  if (!IS_SERVERLESS) db.pragma("journal_mode = WAL");
   db.exec(`
     CREATE TABLE IF NOT EXISTS categories (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
