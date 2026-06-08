@@ -1,5 +1,11 @@
 import { collections, Timestamp } from "./firebase-admin";
-import type { Category, Offer, Order, Product, ProductWithCategory } from "./types";
+import type {
+  Category,
+  Offer,
+  Order,
+  Product,
+  ProductWithCategory,
+} from "./types";
 
 function tsToSeconds(v: unknown): number {
   if (v instanceof Timestamp) return Math.floor(v.toMillis() / 1000);
@@ -68,14 +74,20 @@ function orderFromDoc(doc: FirebaseFirestore.DocumentSnapshot): Order {
 // ===== Categories =====
 
 export async function listCategories(): Promise<Category[]> {
-  const snap = await collections.categories.orderBy("name").get();
-  return snap.docs.map(categoryFromDoc);
+  return safeQuery([], async () => {
+    const snap = await collections.categories.orderBy("name").get();
+    return snap.docs.map(categoryFromDoc);
+  });
 }
 
-export async function getCategoryBySlug(slug: string): Promise<Category | undefined> {
-  const doc = await collections.categories.doc(slug).get();
-  if (!doc.exists) return undefined;
-  return categoryFromDoc(doc);
+export async function getCategoryBySlug(
+  slug: string,
+): Promise<Category | undefined> {
+  return safeQuery(undefined, async () => {
+    const doc = await collections.categories.doc(slug).get();
+    if (!doc.exists) return undefined;
+    return categoryFromDoc(doc);
+  });
 }
 
 // ===== Products =====
@@ -87,74 +99,112 @@ async function categoryNameMap(): Promise<Map<string, string>> {
   return m;
 }
 
-function withCategory(p: Product, names: Map<string, string>): ProductWithCategory {
-  return { ...p, category_name: p.category_slug ? names.get(p.category_slug) ?? null : null };
-}
-
-export async function listProducts(
-  opts: { categorySlug?: string; activeOnly?: boolean } = {}
-): Promise<ProductWithCategory[]> {
-  const { categorySlug, activeOnly = true } = opts;
-  let q: FirebaseFirestore.Query = collections.products;
-  if (activeOnly) q = q.where("active", "==", true);
-  if (categorySlug) q = q.where("category_slug", "==", categorySlug);
-
-  const [snap, names] = await Promise.all([q.get(), categoryNameMap()]);
-  const items = snap.docs.map(productFromDoc).map((p) => withCategory(p, names));
-  // Sort featured first, then by created_at desc — done in memory to avoid composite index
-  items.sort((a, b) => {
-    if (a.featured !== b.featured) return b.featured - a.featured;
-    return b.created_at - a.created_at;
-  });
-  return items;
-}
-
-export async function getFeaturedProducts(limit = 6): Promise<ProductWithCategory[]> {
-  const [snap, names] = await Promise.all([
-    collections.products
-      .where("active", "==", true)
-      .where("featured", "==", true)
-      .get(),
-    categoryNameMap(),
-  ]);
-  const items = snap.docs.map(productFromDoc).map((p) => withCategory(p, names));
-  items.sort((a, b) => b.created_at - a.created_at);
-  return items.slice(0, limit);
-}
-
-export async function getProductBySlug(slug: string): Promise<ProductWithCategory | undefined> {
-  const doc = await collections.products.doc(slug).get();
-  if (!doc.exists) return undefined;
-  const p = productFromDoc(doc);
-  const cat = p.category_slug
-    ? await collections.categories.doc(p.category_slug).get()
-    : null;
+function withCategory(
+  p: Product,
+  names: Map<string, string>,
+): ProductWithCategory {
   return {
     ...p,
-    category_name: cat && cat.exists ? String(cat.data()?.name ?? "") : null,
+    category_name: p.category_slug
+      ? (names.get(p.category_slug) ?? null)
+      : null,
   };
 }
 
-export async function getProductById(slug: string): Promise<Product | undefined> {
-  const doc = await collections.products.doc(slug).get();
-  if (!doc.exists) return undefined;
-  return productFromDoc(doc);
+async function safeQuery<T>(fallback: T, query: () => Promise<T>): Promise<T> {
+  try {
+    return await query();
+  } catch {
+    return fallback;
+  }
+}
+
+export async function listProducts(
+  opts: { categorySlug?: string; activeOnly?: boolean } = {},
+): Promise<ProductWithCategory[]> {
+  const { categorySlug, activeOnly = true } = opts;
+  return safeQuery([], async () => {
+    let q: FirebaseFirestore.Query = collections.products;
+    if (activeOnly) q = q.where("active", "==", true);
+    if (categorySlug) q = q.where("category_slug", "==", categorySlug);
+
+    const [snap, names] = await Promise.all([q.get(), categoryNameMap()]);
+    const items = snap.docs
+      .map(productFromDoc)
+      .map((p) => withCategory(p, names));
+    // Sort featured first, then by created_at desc — done in memory to avoid composite index
+    items.sort((a, b) => {
+      if (a.featured !== b.featured) return b.featured - a.featured;
+      return b.created_at - a.created_at;
+    });
+    return items;
+  });
+}
+
+export async function getFeaturedProducts(
+  limit = 6,
+): Promise<ProductWithCategory[]> {
+  return safeQuery([], async () => {
+    const [snap, names] = await Promise.all([
+      collections.products
+        .where("active", "==", true)
+        .where("featured", "==", true)
+        .get(),
+      categoryNameMap(),
+    ]);
+    const items = snap.docs
+      .map(productFromDoc)
+      .map((p) => withCategory(p, names));
+    items.sort((a, b) => b.created_at - a.created_at);
+    return items.slice(0, limit);
+  });
+}
+
+export async function getProductBySlug(
+  slug: string,
+): Promise<ProductWithCategory | undefined> {
+  return safeQuery(undefined, async () => {
+    const doc = await collections.products.doc(slug).get();
+    if (!doc.exists) return undefined;
+    const p = productFromDoc(doc);
+    const cat = p.category_slug
+      ? await collections.categories.doc(p.category_slug).get()
+      : null;
+    return {
+      ...p,
+      category_name: cat && cat.exists ? String(cat.data()?.name ?? "") : null,
+    };
+  });
+}
+
+export async function getProductById(
+  slug: string,
+): Promise<Product | undefined> {
+  return safeQuery(undefined, async () => {
+    const doc = await collections.products.doc(slug).get();
+    if (!doc.exists) return undefined;
+    return productFromDoc(doc);
+  });
 }
 
 // ===== Offers =====
 
 export async function listActiveOffers(): Promise<Offer[]> {
-  const snap = await collections.offers.where("active", "==", true).get();
-  const items = snap.docs.map(offerFromDoc);
-  items.sort((a, b) => b.created_at - a.created_at);
-  return items;
+  return safeQuery([], async () => {
+    const snap = await collections.offers.where("active", "==", true).get();
+    const items = snap.docs.map(offerFromDoc);
+    items.sort((a, b) => b.created_at - a.created_at);
+    return items;
+  });
 }
 
 export async function listAllOffers(): Promise<Offer[]> {
-  const snap = await collections.offers.get();
-  const items = snap.docs.map(offerFromDoc);
-  items.sort((a, b) => b.created_at - a.created_at);
-  return items;
+  return safeQuery([], async () => {
+    const snap = await collections.offers.get();
+    const items = snap.docs.map(offerFromDoc);
+    items.sort((a, b) => b.created_at - a.created_at);
+    return items;
+  });
 }
 
 // ===== Orders =====
@@ -165,7 +215,7 @@ export async function listOrders(): Promise<Order[]> {
 }
 
 export async function createOrder(
-  o: Omit<Order, "id" | "status" | "created_at">
+  o: Omit<Order, "id" | "status" | "created_at">,
 ): Promise<string> {
   const ref = await collections.orders.add({
     ...o,

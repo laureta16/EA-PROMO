@@ -10,7 +10,7 @@ export function AddToCart({
   price_cents,
   image_url,
 }: {
-  productId: number;
+  productId: string;
   slug: string;
   name: string;
   price_cents: number;
@@ -34,14 +34,18 @@ export function AddToCart({
           onClick={() => setQty((q) => Math.max(1, q - 1))}
           className="w-10 h-10 grid place-items-center hover:bg-[var(--brand-soft)]"
           aria-label="Më pak"
-        >−</button>
+        >
+          −
+        </button>
         <span className="w-10 text-center font-semibold">{qty}</span>
         <button
           type="button"
           onClick={() => setQty((q) => q + 1)}
           className="w-10 h-10 grid place-items-center hover:bg-[var(--brand-soft)]"
           aria-label="Më shumë"
-        >+</button>
+        >
+          +
+        </button>
       </div>
       <button type="button" onClick={handleAdd} className="btn btn-primary">
         {added ? "✓ Shtuar në shportë" : "Shto në shportë"}
