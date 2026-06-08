@@ -1,82 +1,82 @@
-import { getDb } from "./db";
+import { store } from "./store";
 import type { Category, Offer, Order, Product, ProductWithCategory } from "./types";
 
+function withCategory(p: Product, cats: Category[]): ProductWithCategory {
+  const c = cats.find((x) => x.id === p.category_id);
+  return { ...p, category_name: c?.name ?? null, category_slug: c?.slug ?? null };
+}
+
 export function listCategories(): Category[] {
-  return getDb().prepare("SELECT * FROM categories ORDER BY name").all() as Category[];
+  return [...store().categories].sort((a, b) => a.name.localeCompare(b.name));
 }
 
 export function getCategoryBySlug(slug: string): Category | undefined {
-  return getDb().prepare("SELECT * FROM categories WHERE slug = ?").get(slug) as Category | undefined;
+  return store().categories.find((c) => c.slug === slug);
 }
 
 export function listProducts(opts: { categorySlug?: string; activeOnly?: boolean } = {}): ProductWithCategory[] {
   const { categorySlug, activeOnly = true } = opts;
-  const where: string[] = [];
-  const params: unknown[] = [];
-  if (activeOnly) where.push("p.active = 1");
+  const s = store();
+  let items = s.products;
+  if (activeOnly) items = items.filter((p) => p.active === 1);
   if (categorySlug) {
-    where.push("c.slug = ?");
-    params.push(categorySlug);
+    const cat = s.categories.find((c) => c.slug === categorySlug);
+    if (cat) items = items.filter((p) => p.category_id === cat.id);
+    else items = [];
   }
-  const sql = `
-    SELECT p.*, c.name AS category_name, c.slug AS category_slug
-    FROM products p
-    LEFT JOIN categories c ON c.id = p.category_id
-    ${where.length ? "WHERE " + where.join(" AND ") : ""}
-    ORDER BY p.featured DESC, p.created_at DESC
-  `;
-  return getDb().prepare(sql).all(...params) as ProductWithCategory[];
+  const result = items.map((p) => withCategory(p, s.categories));
+  result.sort((a, b) => {
+    if (a.featured !== b.featured) return b.featured - a.featured;
+    return b.created_at - a.created_at;
+  });
+  return result;
 }
 
 export function getFeaturedProducts(limit = 6): ProductWithCategory[] {
-  return getDb()
-    .prepare(
-      `SELECT p.*, c.name AS category_name, c.slug AS category_slug
-       FROM products p
-       LEFT JOIN categories c ON c.id = p.category_id
-       WHERE p.active = 1 AND p.featured = 1
-       ORDER BY p.created_at DESC LIMIT ?`
-    )
-    .all(limit) as ProductWithCategory[];
+  const s = store();
+  return s.products
+    .filter((p) => p.active === 1 && p.featured === 1)
+    .map((p) => withCategory(p, s.categories))
+    .sort((a, b) => b.created_at - a.created_at)
+    .slice(0, limit);
 }
 
 export function getProductBySlug(slug: string): ProductWithCategory | undefined {
-  return getDb()
-    .prepare(
-      `SELECT p.*, c.name AS category_name, c.slug AS category_slug
-       FROM products p LEFT JOIN categories c ON c.id = p.category_id
-       WHERE p.slug = ?`
-    )
-    .get(slug) as ProductWithCategory | undefined;
+  const s = store();
+  const p = s.products.find((x) => x.slug === slug);
+  if (!p) return undefined;
+  return withCategory(p, s.categories);
 }
 
 export function getProductById(id: number): Product | undefined {
-  return getDb().prepare("SELECT * FROM products WHERE id = ?").get(id) as Product | undefined;
+  return store().products.find((p) => p.id === id);
 }
 
 export function listActiveOffers(): Offer[] {
-  return getDb()
-    .prepare("SELECT * FROM offers WHERE active = 1 ORDER BY created_at DESC")
-    .all() as Offer[];
+  return store().offers.filter((o) => o.active === 1).sort((a, b) => b.created_at - a.created_at);
 }
 
 export function listAllOffers(): Offer[] {
-  return getDb().prepare("SELECT * FROM offers ORDER BY created_at DESC").all() as Offer[];
+  return [...store().offers].sort((a, b) => b.created_at - a.created_at);
 }
 
 export function listOrders(): Order[] {
-  return getDb().prepare("SELECT * FROM orders ORDER BY created_at DESC").all() as Order[];
+  return [...store().orders].sort((a, b) => b.created_at - a.created_at);
 }
 
 export function createOrder(o: Omit<Order, "id" | "status" | "created_at">): number {
-  const stmt = getDb().prepare(
-    `INSERT INTO orders (product_id, product_name, quantity, customer_name, phone, email, address, notes, items_json, total_cents)
-     VALUES (@product_id, @product_name, @quantity, @customer_name, @phone, @email, @address, @notes, @items_json, @total_cents)`
-  );
-  const r = stmt.run(o);
-  return Number(r.lastInsertRowid);
+  const s = store();
+  const id = s.nextId.order++;
+  s.orders.push({
+    ...o,
+    id,
+    status: "pending",
+    created_at: Math.floor(Date.now() / 1000),
+  });
+  return id;
 }
 
 export function updateOrderStatus(id: number, status: string) {
-  getDb().prepare("UPDATE orders SET status = ? WHERE id = ?").run(status, id);
+  const o = store().orders.find((x) => x.id === id);
+  if (o) o.status = status;
 }

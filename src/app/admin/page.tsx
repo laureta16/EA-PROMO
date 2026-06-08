@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { isAdmin } from "@/lib/auth";
 import { LoginForm } from "@/components/LoginForm";
-import { getDb } from "@/lib/db";
+import { listAllOffers, listCategories, listOrders, listProducts } from "@/lib/queries";
 
 export default async function AdminHome() {
   const authed = await isAdmin();
@@ -12,18 +12,15 @@ export default async function AdminHome() {
       </div>
     );
   }
-  const db = getDb();
-  const counts = {
-    products: (db.prepare("SELECT COUNT(*) AS n FROM products").get() as { n: number }).n,
-    categories: (db.prepare("SELECT COUNT(*) AS n FROM categories").get() as { n: number }).n,
-    offers: (db.prepare("SELECT COUNT(*) AS n FROM offers WHERE active=1").get() as { n: number }).n,
-    orders: (db.prepare("SELECT COUNT(*) AS n FROM orders WHERE status='pending'").get() as { n: number }).n,
-  };
+  const products = listProducts({ activeOnly: false });
+  const categories = listCategories();
+  const offers = listAllOffers().filter((o) => o.active === 1);
+  const orders = listOrders().filter((o) => o.status === "pending");
   const cards: { href: string; label: string; n: number }[] = [
-    { href: "/admin/produkte", label: "Produkte", n: counts.products },
-    { href: "/admin/kategori", label: "Kategori", n: counts.categories },
-    { href: "/admin/oferta", label: "Oferta aktive", n: counts.offers },
-    { href: "/admin/porosi", label: "Porosi në pritje", n: counts.orders },
+    { href: "/admin/produkte", label: "Produkte", n: products.length },
+    { href: "/admin/kategori", label: "Kategori", n: categories.length },
+    { href: "/admin/oferta", label: "Oferta aktive", n: offers.length },
+    { href: "/admin/porosi", label: "Porosi në pritje", n: orders.length },
   ];
   return (
     <div>
