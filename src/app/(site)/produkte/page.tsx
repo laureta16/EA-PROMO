@@ -31,10 +31,10 @@ export default async function ProduktePage({
         </p>
       </header>
 
-      <div className="flex flex-wrap gap-2 mb-8">
+      <div className="flex flex-wrap gap-1.5 mb-6">
         <Link
           href="/produkte"
-          className={`btn ${!current ? "btn-primary" : "btn-outline"}`}
+          className={`chip ${!current ? "chip-active" : ""}`}
         >
           Të gjitha
         </Link>
@@ -42,7 +42,7 @@ export default async function ProduktePage({
           <Link
             key={c.id}
             href={`/produkte?kategori=${c.slug}`}
-            className={`btn ${current?.id === c.id ? "btn-primary" : "btn-outline"}`}
+            className={`chip ${current?.id === c.id ? "chip-active" : ""}`}
           >
             {c.name}
           </Link>

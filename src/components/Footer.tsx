@@ -127,7 +127,7 @@ export function Footer() {
         <div className="border-t border-[var(--border)]">
           <div className="container-x py-5 text-xs text-[var(--muted)] flex flex-col sm:flex-row justify-between gap-2">
             <span>© {new Date().getFullYear()} EA Promo. Të gjitha të drejtat e rezervuara.</span>
-            <span>Krijuar me ❤ në Shqipëri</span>
+            <span>Tiranë, Shqipëri</span>
           </div>
         </div>
       </div>

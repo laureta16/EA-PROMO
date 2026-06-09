@@ -26,6 +26,9 @@ export function listProducts(opts: { categorySlug?: string; activeOnly?: boolean
   }
   const result = items.map((p) => withCategory(p, s.categories));
   result.sort((a, b) => {
+    const aHasImg = a.image_url ? 1 : 0;
+    const bHasImg = b.image_url ? 1 : 0;
+    if (aHasImg !== bHasImg) return bHasImg - aHasImg;
     if (a.featured !== b.featured) return b.featured - a.featured;
     return b.created_at - a.created_at;
   });
