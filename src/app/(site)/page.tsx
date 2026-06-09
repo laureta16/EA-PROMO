@@ -213,8 +213,18 @@ export default function HomePage() {
       {/* ---------- VIDEO SHOWCASE: brandim video as section bg ---------- */}
       <section className="relative my-12 overflow-hidden">
         <div className="relative h-[420px] md:h-[520px]">
+          {/* Mobile: static image (iOS blocks video autoplay and adds an ugly play overlay) */}
+          <Image
+            src="/showcase/set-biznesi.png"
+            alt="EA Promo brandim"
+            fill
+            sizes="100vw"
+            className="md:hidden object-cover"
+            priority={false}
+          />
+          {/* Desktop: looping background video */}
           <video
-            className="absolute inset-0 w-full h-full object-cover"
+            className="hidden md:block absolute inset-0 w-full h-full object-cover"
             src="/showcase/brandim.mp4"
             autoPlay
             muted
