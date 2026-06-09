@@ -4,6 +4,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { OrderForm } from "@/components/OrderForm";
 import { AddToCart } from "@/components/cart/AddToCart";
+import { ProductCard } from "@/components/ProductCard";
 import { getProductBySlug, listProducts } from "@/lib/queries";
 import { formatLek } from "@/lib/types";
 import { site, whatsappLink } from "@/lib/site";
@@ -140,23 +141,9 @@ export default async function ProduktDetail({
       {related.length > 0 && (
         <section className="mt-20">
           <h2 className="text-2xl font-bold text-[var(--accent)] mb-6">Produkte të ngjashme</h2>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5">
             {related.map((p) => (
-              <Link
-                key={p.id}
-                href={`/produkte/${p.slug}`}
-                className="card group block hover:shadow-md transition-shadow"
-              >
-                {p.image_url && (
-                  <div className="relative aspect-square">
-                    <Image src={p.image_url} alt={p.name} fill sizes="25vw" className="object-cover" />
-                  </div>
-                )}
-                <div className="p-4">
-                  <h3 className="font-semibold line-clamp-1">{p.name}</h3>
-                  <p className="text-sm text-[var(--brand)] font-bold mt-1">{formatLek(p.price_cents)}</p>
-                </div>
-              </Link>
+              <ProductCard key={p.id} product={p} />
             ))}
           </div>
         </section>
